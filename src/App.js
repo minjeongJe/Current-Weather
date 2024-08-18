@@ -3,6 +3,7 @@ import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import WeatherBox from './component/WeatherBox';
 import WeatherButton from './component/WeatherButton';
+import ClipLoader from "react-spinners/ClipLoader";
 
 // 1. 앱이 실행되자마자 현재위치기반의 날씨가 보인다. 
 // 2. 날씨정보에는 도시, 섭씨, 화씨 날씨상태
@@ -13,7 +14,14 @@ import WeatherButton from './component/WeatherButton';
 
 function App() {
   const [weather, setWeather] = useState(null);
-  const cities = ['seoul', 'paris', 'tokyo', 'suisse'];
+  const [city, setCity] = useState('');
+  const [selectedCity, setSelectedCity] = useState(''); // 선택된 버튼 상태
+  const [loading, setLoading] = useState(false);
+  const [apiError,setApiError] = useState("");
+
+  const cities = ['Seoul', 'Paris', 'Tokyo', 'Suisse'];
+  
+  // 현재 위치 정보 가져오는 함수
   const getCurrentLocation = () => {
     // console.log("getCurrentLocation");
     navigator.geolocation.getCurrentPosition((position) => {
@@ -21,27 +29,64 @@ function App() {
       let lon = position.coords.longitude
       // console.log("현재위치", lat, lon);
       getWeatherByCurrentLocation(lat, lon);
+      setSelectedCity('current'); // 현재 위치 버튼이 선택
     });
   }
 
+  // 현재 위치 기반 날씨 정보
   const getWeatherByCurrentLocation = async(lat, lon) => {
-    let url = (`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=d79a77dc95d37d09aa8e5bb0ccaab03d&units=metric`);
-    let response = await fetch(url);
-    let data = await response.json();
-    // console.log("data", data);
-    setWeather(data);
+    try{
+      // 로딩 상태 시작
+      setLoading(true);
+      let url = (`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=d79a77dc95d37d09aa8e5bb0ccaab03d&units=metric`);
+      setLoading(true);
+      let response = await fetch(url);
+      let data = await response.json();
+      // console.log("data", data);
+      
+      setWeather(data);
+      setLoading(false);
+    }catch (err) {
+      setApiError(err.message);
+      setLoading(false);
+    }
+  }
+
+  // 도시별 날씨 정보
+  const getWeatherByCity = async() => {
+    try{
+      setLoading(true);
+      let url = (`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=d79a77dc95d37d09aa8e5bb0ccaab03d&units=metric`);
+      let response = await fetch(url);
+      let data = await response.json();
+      // console.log("data",data);
+
+      setWeather(data);
+      setLoading(false);
+    }catch (err){
+      setApiError(err.message);
+      setLoading(false);
+    }
+    
   }
 
   useEffect(() => {
-    getCurrentLocation();
-  }, []);
+    if(city == ""){
+      getCurrentLocation(); // 현재 위치 기반 날씨 정보 가져오기
+    }else{
+      getWeatherByCity(); // 선택된 도시의 날씨 정보 가져오기
+      setSelectedCity(city); // 도시 선택 시 selectedCity 업데이트
+    }
+  }, [city]);
+
+
 
   return (
     <div>
-      <div className='container'>
-        <WeatherBox weather={weather}/>
-        <WeatherButton cities={cities}/>
-      </div>
+      {loading?<ClipLoader color="#3fb4de" loading={loading} size={150} aria-label="Loading Spinner" data-testid="loader"/> : <div className='container'>  
+      <WeatherBox weather={weather}/>
+      <WeatherButton cities={cities} setCity={setCity} getCurrentLocation= {getCurrentLocation} selectedCity={selectedCity}/>
+      </div>}
     </div>
   );
 }
