@@ -39,16 +39,15 @@ function App() {
       // 로딩 상태 시작
       setLoading(true);
       let url = (`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=d79a77dc95d37d09aa8e5bb0ccaab03d&units=metric`);
-      setLoading(true);
       let response = await fetch(url);
       let data = await response.json();
       // console.log("data", data);
       
       setWeather(data);
-      setLoading(false);
     }catch (err) {
       setApiError(err.message);
-      setLoading(false);
+    }finally {
+      setLoading(false); // 로딩 상태 종료
     }
   }
 
@@ -62,12 +61,11 @@ function App() {
       // console.log("data",data);
 
       setWeather(data);
-      setLoading(false);
     }catch (err){
       setApiError(err.message);
-      setLoading(false);
+    }finally {
+      setLoading(false); // 로딩 상태 종료
     }
-    
   }
 
   useEffect(() => {
